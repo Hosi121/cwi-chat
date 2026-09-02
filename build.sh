@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# index.html / style.css / scenarios.js / app.js を 1 ファイルに束ねる
+# index.html / style.css / scenarios.js / cwi-chat.js を 1 ファイルに束ねる
 #   ./build.sh            -> dist/cwi-chat.html（単体で開ける完全な HTML）
 #   ./build.sh --artifact -> dist/cwi-chat.artifact.html（<html>/<head>/<body> なし。Artifact 公開用）
 set -euo pipefail
@@ -9,7 +9,7 @@ FONT='<link rel="preconnect" href="https://fonts.googleapis.com"><link href="htt
 head_part() { echo '<title>CwI Chat</title>'; echo "$FONT"; echo '<style>'; cat style.css; echo '</style>'; }
 body_part() {
   sed -n '/<!-- BODY:START -->/,/<!-- BODY:END -->/p' index.html
-  echo '<script>'; cat scenarios.js; echo; cat prompt.js; echo; cat app.js; echo '</script>'
+  echo '<script>'; cat scenarios.js; echo; cat prompt.js; echo; cat cwi-chat.js; echo '</script>'
 }
 if [[ "${1:-}" == "--artifact" ]]; then
   { head_part; body_part; } > dist/cwi-chat.artifact.html

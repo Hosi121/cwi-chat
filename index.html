@@ -92,7 +92,7 @@
 
     <section class="wz-sec wz-live">
       <div class="wz-title"><span>Live（OpenAI）</span><label class="switch"><input type="checkbox" id="wz-live"><span>Live モード</span></label></div>
-      <p class="muted" style="margin:0;font-size:12px;line-height:1.5"><code>node server.mjs</code> で開くと、サーバーが .env のキーで OpenAI に中継します。file:// で開いた場合はブラウザから直接接続し、キーはこのブラウザの localStorage にだけ保存されます。Artifact 上では通信できません。</p>
+      <p class="muted" style="margin:0;font-size:12px;line-height:1.5"><code>node local/server.mjs</code> で開くと、サーバーが .env のキーで OpenAI に中継します。file:// で開いた場合はブラウザから直接接続し、キーはこのブラウザの localStorage にだけ保存されます。Artifact 上では通信できません。</p>
       <div class="muted" id="wz-key-note" style="font-size:12px"></div>
       <div class="wz-row wz-keyrow">
         <input type="password" id="wz-key" placeholder="sk-…（API キー）" autocomplete="off" style="flex:1;min-width:160px">
@@ -155,6 +155,6 @@
 <!-- BODY:END -->
 <script src="scenarios.js"></script>
 <script src="prompt.js"></script>
-<script src="app.js"></script>
+<script src="cwi-chat.js"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 /* ============================================================
-   app.js — CwI Chat
+   cwi-chat.js — CwI Chat
    Caption-with-Intention 風の「言い方」を、文字の太さ・色・動き・間、
    アバターの表情と視線、部屋の照明で表現する。
    台本モード（WoZ）と Live モード（OpenAI にルールを渡して生成）を切り替えられる。
@@ -611,7 +611,7 @@ async function playLiveReply(content) {
   const session = state.session;
   if (!state.proxy && !state.apiKey) {
     const el = createAiMessage('');
-    const raw = '{sorry}API キーがまだ入っていません。{/}{pause:400}{br}{small}node server.mjs で開くか、Wizard パネル（Ctrl+.）の「Live（OpenAI）」にキーを入れてください。{/}';
+    const raw = '{sorry}API キーがまだ入っていません。{/}{pause:400}{br}{small}node local/server.mjs で開くか、Wizard パネル（Ctrl+.）の「Live（OpenAI）」にキーを入れてください。{/}';
     setAiRaw(el, raw);
     await revealInto(el, raw);
     return;

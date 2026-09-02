@@ -1,7 +1,7 @@
 /* ============================================================
    server.mjs — 静的配信 + OpenAI 中継（依存なし / Node 18+）
-     node server.mjs            -> http://localhost:8787/
-   .env（同じフォルダ）から OPENAI_API_KEY を読み、ブラウザにはキーを渡しません。
+     node local/server.mjs      -> http://localhost:8787/
+   リポジトリ直下の .env から OPENAI_API_KEY を読み、ブラウザにはキーを渡しません。
      OPENAI_API_KEY=sk-...      標準の書き方
      sk-...                     キーだけ 1 行で書いてある場合もそのまま使えます
      OPENAI_MODEL=gpt-4.1-mini  省略可（既定モデル）
@@ -14,7 +14,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'); // リポジトリ直下
 
 function loadEnv() {
   const out = {};
@@ -53,7 +53,7 @@ function serveStatic(pathname, res) {
   if (rel === '/' || rel === '') rel = '/index.html';
   const abs = path.normalize(path.join(ROOT, rel));
   const base = path.basename(abs);
-  if (!abs.startsWith(ROOT + path.sep) || base.startsWith('.') || base === 'server.mjs') { json(res, 404, { error: 'not found' }); return; }
+  if (!abs.startsWith(ROOT + path.sep) || base.startsWith('.') || abs.startsWith(path.join(ROOT, 'local') + path.sep)) { json(res, 404, { error: 'not found' }); return; }
   fs.readFile(abs, (err, data) => {
     if (err) { json(res, 404, { error: 'not found' }); return; }
     res.writeHead(200, { 'Content-Type': MIME[path.extname(abs)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });

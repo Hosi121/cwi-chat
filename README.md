@@ -26,7 +26,7 @@ python3 -m http.server 8000     # http://localhost:8000/ を開く（index.html 
 ```bash
 cd ~/cwi-chat
 # .env に OPENAI_API_KEY=sk-... を書く（キーだけ 1 行でも可）
-node server.mjs              # http://localhost:8787/ を開く
+node local/server.mjs              # http://localhost:8787/ を開く
 ```
 
 - サーバーが `.env` のキーで OpenAI に中継するので、ブラウザにキーは渡りません。
@@ -34,7 +34,7 @@ node server.mjs              # http://localhost:8787/ を開く
 - モデルは `.env` の `OPENAI_MODEL`（既定 `gpt-4.1-mini`）か、Wizard パネルの「モデル」欄で変えられます。
 - システムプロンプト（装飾ルール）は `prompt.js` にあり、Wizard パネルから編集して試せます（編集内容はブラウザに保存）。
 - 返答は SSE でストリーミングされ、受け取りながら「間」つきで再生されます。冒頭の `{pre:…}` で「考え中」表示の種類が変わり、待ち時間は実際の応答遅延です。
-- `node server.mjs` を使わず file:// で開いた場合は、Wizard パネルにキーを入れるとブラウザから直接 api.openai.com に接続します。
+- `node local/server.mjs` を使わず file:// で開いた場合は、Wizard パネルにキーを入れるとブラウザから直接 api.openai.com に接続します。
 
 ## マークアップ
 
@@ -100,7 +100,7 @@ npx vercel --prod
 | `OPENAI_MODEL` | 任意 | 既定モデル（`gpt-4.1-mini`） |
 | `APP_PASSWORD` | 任意 | 設定すると Live 利用時にパスワードを求めます。URL を知っている人が誰でもあなたのキーで生成できてしまうのを防ぐためのものです |
 
-ローカルの `server.mjs` も同じ環境変数（`.env`）を読みます。
+ローカルの `local/server.mjs` も同じ環境変数（`.env`）を読みます。
 
 ## 1 ファイルにまとめる
 
@@ -113,7 +113,7 @@ npx vercel --prod
 
 - `index.html` — 画面（サイドバー / スレッド / 入力欄 / Wizard パネル / 凡例）
 - `style.css` — 見た目と、タグごとのアニメーション（`.run.t-*`）
-- `app.js` — マークアップ解析 → 禁則処理 → タイミング表 → 1 文字ずつ再生、WoZ 制御、BroadcastChannel
+- `cwi-chat.js` — マークアップ解析 → 禁則処理 → タイミング表 → 1 文字ずつ再生、WoZ 制御、BroadcastChannel
 - `scenarios.js` — 台本（ここを書き換えて実験シナリオを作る）
 - `prompt.js` — Live モードのシステムプロンプト（装飾ルール）
-- `server.mjs` — 静的配信 + OpenAI 中継（`.env` のキーを使う）
+- `local/server.mjs` — 静的配信 + OpenAI 中継（`.env` のキーを使う）
