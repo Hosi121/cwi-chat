@@ -94,9 +94,21 @@ async function proxyChat(req, res) {
   try { for await (const chunk of up.body) res.write(chunk); } catch (_) { /* 中断 */ } finally { res.end(); }
 }
 
+async function listModels(req, res) {
+  if (!API_KEY) { json(res, 500, { error: { message: '.env に OPENAI_API_KEY がありません' } }); return; }
+  if (APP_PASSWORD && req.headers['x-cwi-token'] !== APP_PASSWORD) { json(res, 401, { error: { message: 'アクセス用パスワードが違います' } }); return; }
+  let up;
+  try { up = await fetch(`${BASE}/models`, { headers: { Authorization: `Bearer ${API_KEY}` } }); }
+  catch (e) { json(res, 502, { error: { message: `OpenAI に接続できません: ${e.message}` } }); return; }
+  if (!up.ok) { json(res, up.status, { error: { message: `HTTP ${up.status}` } }); return; }
+  const j = await up.json();
+  json(res, 200, { default: DEFAULT_MODEL, models: (j.data || []).map(m => m.id) });
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   if (url.pathname === '/api/health') { json(res, 200, { ok: !!API_KEY, model: DEFAULT_MODEL, needsToken: !!APP_PASSWORD }); return; }
+  if (url.pathname === '/api/models') { listModels(req, res).catch(e => { try { json(res, 500, { error: { message: e.message } }); } catch (_) { /* sent */ } }); return; }
   if (url.pathname === '/api/chat' && req.method === 'POST') { proxyChat(req, res).catch(e => { try { json(res, 500, { error: { message: e.message } }); } catch (_) { /* already sent */ } }); return; }
   if (req.method !== 'GET' && req.method !== 'HEAD') { json(res, 405, { error: 'method not allowed' }); return; }
   serveStatic(url.pathname, res);

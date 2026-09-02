@@ -265,7 +265,7 @@ const state = {
   expressive: true, basePace: 55, amp: 1, auto: true, showSrc: false,
   showTyping: true, sendTyping: true,
   live: false, apiKey: '', model: 'gpt-5.6-luna', modelCustom: false, systemPrompt: DEFAULT_SYSTEM_PROMPT,
-  proxy: false, needsToken: false, token: '', history: [], liveAbort: null, log: [], sceneMsg: null,
+  proxy: false, needsToken: false, token: '', serverDefault: '', history: [], liveAbort: null, log: [], sceneMsg: null,
 };
 let chain = Promise.resolve();
 function enqueue(job) {
@@ -675,6 +675,57 @@ async function playLiveReply(content) {
 }
 function setLiveStatus(t) { const el = $('#wz-live-status'); if (el) el.textContent = t; }
 
+/* ---------- 9b. モデル一覧 ---------- */
+const MODEL_FALLBACK = ['gpt-5.6-luna', 'gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'gpt-4.1', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4o', 'gpt-4o-mini', 'o3', 'o4-mini'];
+const CHAT_MODEL = /^(gpt-|o\d|chatgpt-)/;
+const NOT_CHAT = /(embedding|tts|whisper|transcri|audio|realtime|image|dall-e|moderation|search|instruct|codex|computer-use|-\d{4}-\d{2}-\d{2}$)/;
+let modelList = MODEL_FALLBACK.slice();
+// 並び: gpt-5 系 → gpt-4.1 系 → gpt-4o 系 → その他 gpt → o 系。同じ系では新しい版が先、本体 → luna/pro/chat-latest → mini → nano
+function modelKey(id) {
+  const fam = /^gpt-5/.test(id) ? 0 : /^gpt-4\.1/.test(id) ? 1 : /^gpt-4o/.test(id) ? 2 : /^gpt-/.test(id) ? 3 : /^o\d/.test(id) ? 4 : 5;
+  const m = id.match(/^(?:gpt|o|chatgpt)-?(\d+(?:\.\d+)?)?(.*)$/);
+  const ver = m && m[1] ? parseFloat(m[1]) : 0;
+  const rest = m ? m[2] : id;
+  const suf = rest === '' ? 0 : /-(luna|pro|chat-latest)/.test(rest) ? 1 : /-mini/.test(rest) ? 2 : /-nano/.test(rest) ? 3 : 4;
+  return [fam, -ver, suf, rest];
+}
+function filterModels(ids) {
+  return ids.filter(id => CHAT_MODEL.test(id) && !NOT_CHAT.test(id)).sort((a, b) => {
+    const ka = modelKey(a), kb = modelKey(b);
+    for (let i = 0; i < 4; i++) { if (ka[i] < kb[i]) return -1; if (ka[i] > kb[i]) return 1; }
+    return 0;
+  });
+}
+function renderModelOptions() {
+  const sel = $('#wz-model');
+  const list = Array.from(new Set([...(state.serverDefault ? [state.serverDefault] : []), ...modelList]));
+  sel.innerHTML = list.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}${m === state.serverDefault ? '（サーバー既定）' : ''}</option>`).join('')
+    + '<option value="__custom">カスタム…</option>';
+  syncModelSelect();
+}
+function syncModelSelect() {
+  const sel = $('#wz-model'), custom = $('#wz-model-custom');
+  const has = Array.from(sel.options).some(o => o.value === state.model);
+  sel.value = has ? state.model : '__custom';
+  custom.hidden = has;
+  if (!has) custom.value = state.model;
+}
+async function loadModels() {
+  try {
+    let ids = null;
+    if (state.proxy) {
+      const headers = state.token ? { 'x-cwi-token': state.token } : {};
+      const r = await fetch('/api/models', { headers });
+      if (r.ok) { const j = await r.json(); ids = j.models; if (j.default) state.serverDefault = j.default; }
+    } else if (state.apiKey) {
+      const r = await fetch('https://api.openai.com/v1/models', { headers: { Authorization: `Bearer ${state.apiKey}` } });
+      if (r.ok) { const j = await r.json(); ids = (j.data || []).map(m => m.id); }
+    }
+    if (ids && ids.length) modelList = filterModels(ids);
+  } catch (_) { /* 取れなければ固定リスト */ }
+  renderModelOptions();
+}
+
 /* ---------- 10. 会話の進行 ---------- */
 function respondNext() {
   const sc = state.scenario;
@@ -831,7 +882,7 @@ function syncControls() {
   $('#toggle-live').checked = state.live;
   $('#wz-live').checked = state.live;
   $('#wz-key').value = state.apiKey;
-  $('#wz-model').value = state.model;
+  syncModelSelect();
   if ($('#wz-prompt').value !== state.systemPrompt) $('#wz-prompt').value = state.systemPrompt;
   document.documentElement.style.setProperty('--amp', state.amp);
   const badge = $('#mode-badge');
@@ -1019,11 +1070,19 @@ $('#wz-popout').addEventListener('click', () => {
 
 // Live 設定（参加者ウィンドウのローカル設定。キーは送信しない）
 $('#wz-live').addEventListener('change', (e) => act('live', { on: e.target.checked }));
-$('#wz-key').addEventListener('change', (e) => { state.apiKey = e.target.value.trim(); saveLocal(); setLiveStatus(state.apiKey ? 'キーを保存しました（このブラウザのみ）' : 'キーを消去しました'); });
-$('#wz-model').addEventListener('change', (e) => { state.model = e.target.value.trim() || 'gpt-5.6-luna'; state.modelCustom = true; syncControls(); saveLocal(); });
+$('#wz-key').addEventListener('change', (e) => { state.apiKey = e.target.value.trim(); saveLocal(); setLiveStatus(state.apiKey ? 'キーを保存しました（このブラウザのみ）' : 'キーを消去しました'); loadModels(); });
+$('#wz-model').addEventListener('change', (e) => {
+  if (e.target.value === '__custom') { const c = $('#wz-model-custom'); c.hidden = false; c.value = ''; c.focus(); return; }
+  state.model = e.target.value; state.modelCustom = true; syncControls(); saveLocal();
+});
+$('#wz-model-custom').addEventListener('change', (e) => {
+  const v = e.target.value.trim();
+  if (!v) return;
+  state.model = v; state.modelCustom = true; syncControls(); saveLocal();
+});
 $('#wz-prompt').addEventListener('change', (e) => { state.systemPrompt = e.target.value; saveLocal(); });
 $('#wz-prompt-reset').addEventListener('click', () => { state.systemPrompt = DEFAULT_SYSTEM_PROMPT; $('#wz-prompt').value = DEFAULT_SYSTEM_PROMPT; saveLocal(); });
-$('#wz-token').addEventListener('change', (e) => { state.token = e.target.value.trim(); saveLocal(); setLiveStatus(state.token ? 'パスワードを保存しました（このブラウザのみ）' : 'パスワードを消去しました'); });
+$('#wz-token').addEventListener('change', (e) => { state.token = e.target.value.trim(); saveLocal(); setLiveStatus(state.token ? 'パスワードを保存しました（このブラウザのみ）' : 'パスワードを消去しました'); loadModels(); });
 $('#wz-key-clear').addEventListener('click', () => { state.apiKey = ''; $('#wz-key').value = ''; saveLocal(); setLiveStatus('キーを消去しました'); });
 
 // 自由作文
@@ -1062,11 +1121,15 @@ document.body.classList.toggle('role-wizard', role === 'wizard');
 document.body.insertAdjacentHTML('afterbegin', FACE_DEFS);
 { const hero = createAvatar('hero'); hero.id = 'hero-avatar'; $('#hero-avatar').replaceWith(hero); }
 loadLocal();
+renderModelOptions();
 renderSidebar(); renderChips(); renderScript(); renderLog(); syncControls();
 if (location.protocol.startsWith('http')) {
   fetch('/api/health').then(r => r.ok ? r.json() : null).then(j => {
-    if (j && j.ok) { state.proxy = true; state.needsToken = !!j.needsToken; if (!state.modelCustom && j.model) state.model = j.model; syncControls(); }
-  }).catch(() => {});
+    if (j && j.ok) { state.proxy = true; state.needsToken = !!j.needsToken; state.serverDefault = j.model || ''; if (!state.modelCustom && j.model) state.model = j.model; syncControls(); loadModels(); }
+    else if (state.apiKey) loadModels();
+  }).catch(() => { if (state.apiKey) loadModels(); });
+} else if (state.apiKey) {
+  loadModels();
 }
 if (role === 'wizard') {
   $('#wz-status').textContent = '参加者ウィンドウを探しています…';
