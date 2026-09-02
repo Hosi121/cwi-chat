@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CwI Chat</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%278%27 fill=%27%23c9486a%27/%3E%3Ctext x=%2716%27 y=%2722%27 font-size=%2716%27 font-weight=%27700%27 text-anchor=%27middle%27 fill=%27white%27 font-family=%27sans-serif%27%3ECw%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@100..900&family=Noto+Serif+JP:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- BODY:START -->
+<aside class="sidebar" id="sidebar">
+  <div class="brand">
+    <span class="logo">Cw</span>
+    <div><b>CwI Chat</b><small>Wizard-of-Oz プロトタイプ</small></div>
+  </div>
+  <button class="newchat" id="btn-new">＋ 新しいチャット</button>
+  <div class="section-title">シナリオ（台本）</div>
+  <nav class="scenarios" id="scenario-list"></nav>
+  <div class="sidebar-foot">
+    <label class="switch"><input type="checkbox" id="toggle-cwi" checked><span>表現（CwI）を使う</span></label>
+    <label class="switch"><input type="checkbox" id="toggle-live"><span>Live（OpenAI）で応答</span></label>
+    <button class="ghost" id="btn-legend"><span>表現の凡例</span></button>
+    <button class="ghost" id="btn-wizard"><span>🎩 Wizard パネル</span><kbd>Ctrl+.</kbd></button>
+  </div>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <div class="model">
+      <button class="icon menu-btn" id="btn-menu" aria-label="メニュー">☰</button>
+      <b>CwI-WoZ</b>
+      <span class="badge on" id="mode-badge" title="クリックで切替">表現 ON</span>
+      <span class="badge" id="live-badge" title="クリックで台本 / Live を切替">WoZ 台本</span>
+    </div>
+    <div class="topbar-right"><span class="scenario-name" id="scenario-name">シナリオ未選択</span></div>
+  </header>
+
+  <section class="thread" id="thread">
+    <div class="empty" id="empty">
+      <div class="avatar hero" id="hero-avatar"></div>
+      <h1>何を話しましょうか？</h1>
+      <p id="empty-lead">シナリオを選ぶと、台本どおりに返事が来ます。</p>
+      <div class="cards" id="scenario-cards"></div>
+    </div>
+    <div class="messages" id="messages"></div>
+  </section>
+
+  <footer class="composer">
+    <div class="chips" id="chips"></div>
+    <form class="inputbox" id="form">
+      <textarea id="input" rows="1" placeholder="メッセージを入力（返事は台本から出ます）"></textarea>
+      <button type="submit" id="send" aria-label="送信">↑</button>
+    </form>
+    <p class="hint" id="hint">WoZ モード：AI は推論していません。返答はあらかじめ用意された台本です。</p>
+  </footer>
+</main>
+
+<aside class="wizard" id="wizard" aria-label="Wizard panel">
+  <div class="wz-head">
+    <div><b>🎩 Wizard</b><span class="status" id="wz-status"></span></div>
+    <button class="icon" id="wz-close" aria-label="閉じる">✕</button>
+  </div>
+  <div class="wz-body">
+    <section class="wz-sec">
+      <div class="wz-row">
+        <label class="switch"><input type="checkbox" id="wz-auto" checked><span>自動応答（台本を順に返す）</span></label>
+      </div>
+      <div class="wz-row">
+        <label class="switch"><input type="checkbox" id="wz-cwi" checked><span>表現（CwI）</span></label>
+        <label class="switch"><input type="checkbox" id="wz-src"><span>ソース表示</span></label>
+      </div>
+      <label class="range">基本テンポ <input type="range" id="wz-pace" min="20" max="120" value="55"><output id="wz-pace-out">55</output> ms/字</label>
+      <label class="range">表現の強さ <input type="range" id="wz-amp" min="0" max="100" value="100"><output id="wz-amp-out">100</output> %</label>
+      <div class="wz-row">
+        <label class="switch"><input type="checkbox" id="wz-show-typing" checked><span>入力の様子を表示</span></label>
+        <label class="switch"><input type="checkbox" id="wz-send-typing" checked><span>モデルにも送る</span></label>
+      </div>
+      <div class="wz-row">
+        <span class="muted" style="font-size:12.5px">シナリオ</span>
+        <select id="wz-scenario"></select>
+      </div>
+    </section>
+
+    <section class="wz-sec">
+      <div class="wz-title"><span>台本</span><button class="ghost small" id="wz-next">▶ 次を送る</button></div>
+      <ol class="wz-script" id="wz-script"></ol>
+    </section>
+
+    <section class="wz-sec wz-live">
+      <div class="wz-title"><span>Live（OpenAI）</span><label class="switch"><input type="checkbox" id="wz-live"><span>Live モード</span></label></div>
+      <p class="muted" style="margin:0;font-size:12px;line-height:1.5"><code>node server.mjs</code> で開くと、サーバーが .env のキーで OpenAI に中継します。file:// で開いた場合はブラウザから直接接続し、キーはこのブラウザの localStorage にだけ保存されます。Artifact 上では通信できません。</p>
+      <div class="muted" id="wz-key-note" style="font-size:12px"></div>
+      <div class="wz-row wz-keyrow">
+        <input type="password" id="wz-key" placeholder="sk-…（API キー）" autocomplete="off" style="flex:1;min-width:160px">
+        <button class="ghost tiny" id="wz-key-clear">消去</button>
+      </div>
+      <div class="wz-row wz-tokenrow">
+        <input type="password" id="wz-token" placeholder="アクセス用パスワード（サーバーの APP_PASSWORD）" autocomplete="off" style="flex:1;min-width:160px">
+      </div>
+      <div class="wz-row">
+        <span class="muted" style="font-size:12.5px">モデル</span>
+        <input type="text" id="wz-model" value="gpt-4.1-mini" style="width:180px">
+      </div>
+      <details>
+        <summary class="muted" style="font-size:12.5px;cursor:pointer">システムプロンプト（装飾ルール）を編集</summary>
+        <textarea id="wz-prompt" rows="14" style="width:100%;margin-top:6px;font:12px/1.5 var(--mono)"></textarea>
+        <button class="ghost tiny" id="wz-prompt-reset" style="margin-top:4px">既定に戻す</button>
+      </details>
+      <div class="muted" id="wz-live-status" style="font-size:12px"></div>
+    </section>
+
+    <section class="wz-sec">
+      <div class="wz-title"><span>自由に作る</span></div>
+      <div class="wz-palette" id="wz-palette"></div>
+      <textarea id="wz-compose" rows="5" placeholder="{warm}こんにちは。{/}{pause:400}{sure}今日は{em}いい天気{/}ですね。{/}"></textarea>
+      <div class="wz-row">
+        <select id="wz-pre">
+          <option value="">前置きなし</option>
+          <option value="quick">quick（すぐ）</option>
+          <option value="think" selected>think（考え中）</option>
+          <option value="deep">deep（じっくり）</option>
+          <option value="hesitate">hesitate（ためらい）</option>
+        </select>
+        <input type="number" id="wz-pre-ms" value="1500" min="0" step="100" style="width:84px"> <span class="muted">ms</span>
+        <button class="ghost small" id="wz-preview">プレビュー</button>
+        <button class="primary small" id="wz-send">送信</button>
+      </div>
+      <div class="wz-preview" id="wz-preview-area"></div>
+    </section>
+
+    <section class="wz-sec">
+      <div class="wz-title"><span>参加者の発話ログ</span></div>
+      <ul class="wz-log" id="wz-log"></ul>
+    </section>
+
+    <section class="wz-sec wz-foot">
+      <button class="ghost small" id="wz-reset">チャットをリセット</button>
+      <button class="ghost small" id="wz-popout">別ウィンドウで Wizard を開く</button>
+      <button class="ghost small" id="wz-legend">凡例</button>
+    </section>
+  </div>
+</aside>
+
+<div class="modal" id="legend" hidden>
+  <div class="modal-card">
+    <div class="modal-head"><b>表現の凡例</b><button class="icon" id="legend-close" aria-label="閉じる">✕</button></div>
+    <p class="muted" style="margin:0 0 8px;font-size:13px">文字の太さ・色・動き・間で、AI の「言い方」を表します。行をクリックすると再生します。</p>
+    <div id="legend-rows"></div>
+  </div>
+</div>
+<!-- BODY:END -->
+<script src="scenarios.js"></script>
+<script src="prompt.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

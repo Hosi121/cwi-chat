@@ -1,0 +1,6 @@
+server.mjs
+build.sh
+dist
+README.md
+.env*
+node_modules
