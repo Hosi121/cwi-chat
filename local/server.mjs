@@ -4,7 +4,7 @@
    リポジトリ直下の .env から OPENAI_API_KEY を読み、ブラウザにはキーを渡しません。
      OPENAI_API_KEY=sk-...      標準の書き方
      sk-...                     キーだけ 1 行で書いてある場合もそのまま使えます
-     OPENAI_MODEL=gpt-4.1-mini  省略可（既定モデル）
+     OPENAI_MODEL=gpt-5.6-luna  省略可（既定モデル）
      OPENAI_BASE_URL=...        省略可（互換 API を使う場合）
      PORT=8787                  省略可
      APP_PASSWORD=...           省略可。設定すると Live 利用時にパスワード（x-cwi-token）を求める
@@ -32,7 +32,7 @@ function loadEnv() {
 }
 const env = { ...loadEnv(), ...process.env };
 const API_KEY = env.OPENAI_API_KEY || '';
-const DEFAULT_MODEL = env.OPENAI_MODEL || 'gpt-4.1-mini';
+const DEFAULT_MODEL = env.OPENAI_MODEL || 'gpt-5.6-luna';
 const BASE = (env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/, '');
 const PORT = +env.PORT || 8787;
 const APP_PASSWORD = env.APP_PASSWORD || '';

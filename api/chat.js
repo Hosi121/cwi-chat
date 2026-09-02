@@ -1,6 +1,6 @@
 // Vercel Edge Function: OpenAI への中継（キーはサーバーの環境変数）
 //   OPENAI_API_KEY   必須
-//   OPENAI_MODEL     任意（既定 gpt-4.1-mini）
+//   OPENAI_MODEL     任意（既定 gpt-5.6-luna）
 //   OPENAI_BASE_URL  任意
 //   APP_PASSWORD     任意。設定すると x-cwi-token ヘッダが一致した要求だけ通す
 export const config = { runtime: 'edge' };
@@ -17,7 +17,7 @@ export default async function handler(req) {
   let body;
   try { body = await req.json(); } catch (_) { return json({ error: { message: 'invalid JSON' } }, 400); }
   if (!Array.isArray(body.messages) || body.messages.length === 0) return json({ error: { message: 'messages がありません' } }, 400);
-  const payload = { model: body.model || process.env.OPENAI_MODEL || 'gpt-4.1-mini', messages: body.messages.slice(-40), stream: true };
+  const payload = { model: body.model || process.env.OPENAI_MODEL || 'gpt-5.6-luna', messages: body.messages.slice(-40), stream: true };
   const base = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/$/, '');
 
   let up;

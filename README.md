@@ -31,7 +31,7 @@ node local/server.mjs              # http://localhost:8787/ を開く
 
 - サーバーが `.env` のキーで OpenAI に中継するので、ブラウザにキーは渡りません。
 - 画面左下の「Live（OpenAI）で応答」を ON にするか、上部の「WoZ 台本」バッジをクリックすると Live モードになります。
-- モデルは `.env` の `OPENAI_MODEL`（既定 `gpt-4.1-mini`）か、Wizard パネルの「モデル」欄で変えられます。
+- モデルは `.env` の `OPENAI_MODEL`（既定 `gpt-5.6-luna`）か、Wizard パネルの「モデル」欄で変えられます。
 - システムプロンプト（装飾ルール）は `prompt.js` にあり、Wizard パネルから編集して試せます（編集内容はブラウザに保存）。
 - 返答は SSE でストリーミングされ、受け取りながら「間」つきで再生されます。冒頭の `{pre:…}` で「考え中」表示の種類が変わり、待ち時間は実際の応答遅延です。
 - `node local/server.mjs` を使わず file:// で開いた場合は、Wizard パネルにキーを入れるとブラウザから直接 api.openai.com に接続します。
@@ -97,7 +97,7 @@ npx vercel --prod
 | 名前 | 必須 | 説明 |
 |---|---|---|
 | `OPENAI_API_KEY` | 必須 | OpenAI の API キー |
-| `OPENAI_MODEL` | 任意 | 既定モデル（`gpt-4.1-mini`） |
+| `OPENAI_MODEL` | 任意 | 既定モデル（`gpt-5.6-luna`） |
 | `APP_PASSWORD` | 任意 | 設定すると Live 利用時にパスワードを求めます。URL を知っている人が誰でもあなたのキーで生成できてしまうのを防ぐためのものです |
 
 ローカルの `local/server.mjs` も同じ環境変数（`.env`）を読みます。

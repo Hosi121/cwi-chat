@@ -264,7 +264,7 @@ const state = {
   session: 0, scenario: null, nextIndex: 0,
   expressive: true, basePace: 55, amp: 1, auto: true, showSrc: false,
   showTyping: true, sendTyping: true,
-  live: false, apiKey: '', model: 'gpt-4.1-mini', modelCustom: false, systemPrompt: DEFAULT_SYSTEM_PROMPT,
+  live: false, apiKey: '', model: 'gpt-5.6-luna', modelCustom: false, systemPrompt: DEFAULT_SYSTEM_PROMPT,
   proxy: false, needsToken: false, token: '', history: [], liveAbort: null, log: [], sceneMsg: null,
 };
 let chain = Promise.resolve();
@@ -1020,7 +1020,7 @@ $('#wz-popout').addEventListener('click', () => {
 // Live 設定（参加者ウィンドウのローカル設定。キーは送信しない）
 $('#wz-live').addEventListener('change', (e) => act('live', { on: e.target.checked }));
 $('#wz-key').addEventListener('change', (e) => { state.apiKey = e.target.value.trim(); saveLocal(); setLiveStatus(state.apiKey ? 'キーを保存しました（このブラウザのみ）' : 'キーを消去しました'); });
-$('#wz-model').addEventListener('change', (e) => { state.model = e.target.value.trim() || 'gpt-4.1-mini'; state.modelCustom = true; syncControls(); saveLocal(); });
+$('#wz-model').addEventListener('change', (e) => { state.model = e.target.value.trim() || 'gpt-5.6-luna'; state.modelCustom = true; syncControls(); saveLocal(); });
 $('#wz-prompt').addEventListener('change', (e) => { state.systemPrompt = e.target.value; saveLocal(); });
 $('#wz-prompt-reset').addEventListener('click', () => { state.systemPrompt = DEFAULT_SYSTEM_PROMPT; $('#wz-prompt').value = DEFAULT_SYSTEM_PROMPT; saveLocal(); });
 $('#wz-token').addEventListener('change', (e) => { state.token = e.target.value.trim(); saveLocal(); setLiveStatus(state.token ? 'パスワードを保存しました（このブラウザのみ）' : 'パスワードを消去しました'); });
